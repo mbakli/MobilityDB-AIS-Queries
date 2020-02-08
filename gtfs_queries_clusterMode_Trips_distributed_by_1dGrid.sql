@@ -23,8 +23,8 @@ DECLARE
 	Duration interval;
 	NumberRows bigint;
 BEGIN
---Distributed Tables: Trips_distributed_by_route_id
-	Mode = 'Cluster_trips_distributed_by_route_id';
+--Distributed Tables: Trips_distributed_by_1dGrid
+	Mode = 'Cluster_trips_distributed_by_1dGrid';
 	SET log_error_verbosity to terse;
 	
 	--Query 1: List the time at which a vehicle visited a station '510 AZUL' between 9PM and 10PM on 2019-09-28?
@@ -37,7 +37,7 @@ BEGIN
 		-- Query 1: 11 ms.
 		EXPLAIN (ANALYZE, FORMAT JSON)
 		SELECT T.Route_id, T.Trip_id, MIN(startTimestamp(atValue(atPeriod(T.Trip, Period('2019-09-28 21:00', '2019-09-28 22:00')) ,S.Stop_geom))) AS Instant
-		FROM Trips_distributed_by_route_id T, Stops_cluster S
+		FROM Trips_distributed_by_1dGrid T, Stops_cluster S
 		WHERE S.stop_name = '510 AZUL'
 		AND _intersects(atPeriod(T.Trip, Period('2019-09-28 21:00', '2019-09-28 22:00')), S.Stop_geom)
 		GROUP BY T.Route_id, T.Trip_id
@@ -67,7 +67,7 @@ BEGIN
 		With Trip_Dist AS
 		(
 		SELECT R.route_id, R.route_desc, sum(length(T.Trip)) as dist
-		FROM Trips_distributed_by_route_id T, routes_cluster R
+		FROM Trips_distributed_by_1dGrid T, routes_cluster R
 		WHERE R.route_id = T.route_id
 		GROUP BY R.route_id, R.route_desc
 		)
@@ -100,7 +100,7 @@ BEGIN
 
 		EXPLAIN (ANALYZE, FORMAT JSON)
 		SELECT timespan(atValue(T.Trip, S.Stop_geom))
-		FROM Trips_distributed_by_route_id T, Stops_cluster S, Routes_cluster R
+		FROM Trips_distributed_by_1dGrid T, Stops_cluster S, Routes_cluster R
 		WHERE S.stop_name = '20 DE SEPTIEMBRE 1787'
 		AND T.Route_id = R.Route_id
 		AND _intersects(T.Trip, S.Stop_geom)
@@ -129,7 +129,7 @@ BEGIN
 
 		EXPLAIN (ANALYZE, FORMAT JSON)
 		SELECT A.Agency_name, R.route_id, R.route_desc, min(numinstants(T.Trip)) as minStops
-		FROM Trips_distributed_by_route_id T, Routes_cluster R, agency_cluster A
+		FROM Trips_distributed_by_1dGrid T, Routes_cluster R, agency_cluster A
 		WHERE T.Route_id = R.Route_id
 		AND R.agency_id = A.agency_id
 		GROUP BY A.Agency_name, R.Route_id, R.route_desc
@@ -159,7 +159,7 @@ BEGIN
 
 		EXPLAIN (ANALYZE, FORMAT JSON)
 		SELECT count(T.trip_id), A.Agency_name
-		FROM Trips_distributed_by_route_id T, Routes_cluster R, agency_cluster A, Communes_cluster C
+		FROM Trips_distributed_by_1dGrid T, Routes_cluster R, agency_cluster A, Communes_cluster C
 		WHERE C.name ='Agronomía'
 		AND R.agency_id = A.agency_id
 		AND T.route_id = R.route_id
@@ -189,7 +189,7 @@ BEGIN
 
 		EXPLAIN (ANALYZE, FORMAT JSON)
 		SELECT R.route_short_name
-		FROM Trips_distributed_by_route_id T, Routes_cluster R
+		FROM Trips_distributed_by_1dGrid T, Routes_cluster R
 		WHERE T.route_id = R.route_id
 		AND EXTRACT(Month FROM starttimestamp(Trip)) = 9
 		AND EXTRACT(ISODOW FROM  starttimestamp(Trip)) IN (6, 7)

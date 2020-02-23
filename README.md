@@ -1,1 +1,1 @@
-# AIS-queries using MobilityDB and Citus
+# AIS Queries using MobilityDB and Citus

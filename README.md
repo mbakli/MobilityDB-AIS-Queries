@@ -1,1 +1,1 @@
-# Distributed GTFS-queries using MobilityDB and Citus
+# AIS-queries using MobilityDB and Citus

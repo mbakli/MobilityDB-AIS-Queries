@@ -10,12 +10,11 @@ CREATE TABLE execution_tests (
 	NumberRows bigint
 );*/
 ---------------------------------------------------------
-CREATE OR REPLACE FUNCTION gtfs_queries_clusterMode(detailed boolean default false) 
+CREATE OR REPLACE FUNCTION ais_queries_clusterMode(detailed boolean default false) 
 RETURNS text AS $$
 DECLARE
 	QuerySet int;
 	Query char(5);
-	Mode char(10);
 	J json;
 	StartTime timestamp;
 	PlanningTime float;
@@ -23,11 +22,9 @@ DECLARE
 	Duration interval;
 	NumberRows bigint;
 BEGIN
---Distributed Tables: Trips_distributed_by_route_id
-	Mode = 'Cluster_trips_distributed_by_route_id';
 	SET log_error_verbosity to terse;
 	
-	--Query 1: List the time at which a vehicle visited a station '510 AZUL' between 9PM and 10PM on 2019-09-28?
+	--Query 1: List the departure time of all ships in the port of Kalundborg between 2019-01-02 00:30 AM and 2019-01-02 01:00?
 	Query = 'Q1';
 	FOR i in 1..10
 	loop
@@ -36,11 +33,11 @@ BEGIN
 
 		-- Query 1: 11 ms.
 		EXPLAIN (ANALYZE, FORMAT JSON)
-		SELECT T.Route_id, T.Trip_id, MIN(startTimestamp(atValue(atPeriod(T.Trip, Period('2019-09-28 21:00', '2019-09-28 22:00')) ,S.Stop_geom))) AS Instant
-		FROM Trips_distributed_by_route_id T, Stops_cluster S
-		WHERE S.stop_name = '510 AZUL'
-		AND _intersects(atPeriod(T.Trip, Period('2019-09-28 21:00', '2019-09-28 22:00')), S.Stop_geom)
-		GROUP BY T.Route_id, T.Trip_id
+		SELECT T.ship_id, T.Trip, startTimestamp(atgeometry(T.trip, P.port_geom)) As DepartTime
+		FROM ships T, ports P
+		WHERE P.port_name='Kalundborg'
+		AND T.trip && STBOX(P.port_geom, period('2019-01-02 00:30', '2019-01-02 01:00') )		
+		and intersects(T.Trip, P.port_geom)
 		INTO J;
 
 		PlanningTime := (J->0->>'Planning Time')::float;
@@ -53,10 +50,10 @@ BEGIN
 		ELSE
 		RAISE INFO 'Query: %, Total Duration: %, Number of Rows: %', trim(Query), Duration, NumberRows;
 		END IF;
-		INSERT INTO execution_tests VALUES (QuerySet, trim(Query), Mode, StartTime, PlanningTime, ExecutionTime, Duration, NumberRows);
+		INSERT INTO execution_tests VALUES (QuerySet, trim(Query), StartTime, PlanningTime, ExecutionTime, Duration, NumberRows);
 	END loop;
 	-------------------------------------------------------------------------------
-	-- Query 2: What is the line name of the longest three trips?
+	-- Query 2: How many one way trips the ships did on September 2, 2019 between the ports of Rødby and Puttgarden?
 	Query = 'Q2';
 	FOR i in 1..10
 	loop
@@ -91,7 +88,7 @@ BEGIN
 		INSERT INTO execution_tests VALUES (QuerySet, trim(Query), Mode, StartTime, PlanningTime, ExecutionTime, Duration, NumberRows);
 	END loop;
 	-------------------------------------------------------------------------------
-	-- Query 3: What is the period that trips have been delayed more than 1 min for departing in the station of '20 DE SEPTIEMBRE 1787'?
+	-- Query 3: List the waiting time of all ships that are waiting in The Port of Kalundborg on August 2, 2019?
 	Query = 'Q3';
 	FOR i in 1..10
 	loop
@@ -120,7 +117,7 @@ BEGIN
 		INSERT INTO execution_tests VALUES (QuerySet, trim(Query), Mode, StartTime, PlanningTime, ExecutionTime, Duration, NumberRows);
 	END loop;
 	-------------------------------------------------------------------------------
-	-- Query 4:What are the 10 lines that have fewer stops in all agencies?
+	-- Query 4:What is the length and speed of all ships that did on September 2, 2019 between the ports of Rødby and Puttgarden?
 	Query = 'Q4';	
 	FOR i in 1..10
 	loop

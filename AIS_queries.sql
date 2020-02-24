@@ -61,18 +61,17 @@ BEGIN
 		StartTime := clock_timestamp();
 
 		EXPLAIN (ANALYZE, FORMAT JSON)
-		With Trip_Dist AS
-		(
-		SELECT R.route_id, R.route_desc, sum(length(T.Trip)) as dist
-		FROM Trips_distributed_by_route_id T, routes_cluster R
-		WHERE R.route_id = T.route_id
-		GROUP BY R.route_id, R.route_desc
-		)
-		SELECT route_id, route_desc, max(dist) as MaxDist
-		FROM Trip_Dist
-		GROUP BY route_id, route_desc
-		ORDER BY MaxDist desc
-		limit 3
+		WITH TEMP
+		AS 
+		   (SELECT 
+				(SELECT Port_geom AS Port_geom_Rodby from Ports where port_name='Rodby'), 
+				(SELECT Port_geom AS Port_geom_Puttgarden from Ports where port_name='Puttgarden') 
+		   )
+		SELECT MMSI, (numSequences(atGeometry(S.Trip, P.Port_geom_Rodby)) +numSequences(atGeometry(S.Trip, P.Port_geom_Puttgarden)))/2.0 AS NumTrips
+		FROM Ships S, TEMP P
+		WHERE intersects(S.Trip, P.port_geom_Rodby) 
+		AND intersects(S.Trip, P.port_geom_Puttgarden) 
+
 		INTO J;
 
 		PlanningTime := (J->0->>'Planning Time')::float;

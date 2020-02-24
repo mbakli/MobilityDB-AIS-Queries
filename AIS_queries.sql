@@ -87,7 +87,7 @@ BEGIN
 		INSERT INTO execution_tests VALUES (QuerySet, trim(Query), Mode, StartTime, PlanningTime, ExecutionTime, Duration, NumberRows);
 	END loop;
 	-------------------------------------------------------------------------------
-	-- Query 3: List the waiting time of all ships that are waiting in The Port of Kalundborg on August 2, 2019?
+	-- Query 3: What is the trajectory and speed of all ships that spent more than 5 days to reach to the Port of Kalundborg in September 2019?
 	Query = 'Q3';
 	FOR i in 1..10
 	loop
@@ -95,12 +95,9 @@ BEGIN
 		StartTime := clock_timestamp();
 
 		EXPLAIN (ANALYZE, FORMAT JSON)
-		SELECT timespan(atValue(T.Trip, S.Stop_geom))
-		FROM Trips_distributed_by_route_id T, Stops_cluster S, Routes_cluster R
-		WHERE S.stop_name = '20 DE SEPTIEMBRE 1787'
-		AND T.Route_id = R.Route_id
-		AND _intersects(T.Trip, S.Stop_geom)
-		AND (endtimestamp(atValue(T.Trip, S.Stop_geom)) - starttimestamp(atValue(T.Trip, S.Stop_geom))) >= '00:01:00'
+		SELECT mmsi AS ShipID, trajectory(Trip) AS Traj, speed
+		FROM Ships
+		WHERE timespan(Trip) > '5 days'		
 		INTO J;
 
 		PlanningTime := (J->0->>'Planning Time')::float;

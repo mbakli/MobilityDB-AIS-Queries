@@ -116,7 +116,7 @@ BEGIN
 		INSERT INTO execution_tests VALUES (QuerySet, trim(Query), Mode, StartTime, PlanningTime, ExecutionTime, Duration, NumberRows);
 	END loop;
 	-------------------------------------------------------------------------------
-	-- Query 4:What is the length and speed of all ships that did on September 2, 2019 between the ports of Rødby and Puttgarden?
+	-- Query 4:What is the length of all trips that ships did on September 2, 2019 to the ports of Puttgarden?
 	Query = 'Q4';	
 	FOR i in 1..10
 	loop
@@ -124,13 +124,10 @@ BEGIN
 		StartTime := clock_timestamp();
 
 		EXPLAIN (ANALYZE, FORMAT JSON)
-		SELECT A.Agency_name, R.route_id, R.route_desc, min(numinstants(T.Trip)) as minStops
-		FROM Trips_distributed_by_route_id T, Routes_cluster R, agency_cluster A
-		WHERE T.Route_id = R.Route_id
-		AND R.agency_id = A.agency_id
-		GROUP BY A.Agency_name, R.Route_id, R.route_desc
-		ORDER BY minStops
-		LIMIT 10
+		SELECT mmsi ShipID, length(Trip)
+		FROM Ships
+		WHERE Destination='Puttgarden'
+		AND Trip && Period('2019-09-02 00:00:00', '2019-09-02 23:59:59')
 		INTO J;
 
 		PlanningTime := (J->0->>'Planning Time')::float;

@@ -18,7 +18,7 @@
 	AND intersects(S.Trip, P.port_geom_Puttgarden) 
 -------------------------------------------------------------------------------
 -- Query 3: What is the trajectory and speed of all ships that spent more than 5 days to reach to the Port of Kalundborg in September 2019?
-	SELECT mmsi AS ShipID, trajectory(Trip) AS Traj, speed
+	SELECT mmsi AS ShipID, trajectory(Trip) AS Traj, speed(Trip) AS TripSpeed
 	FROM Ships
 	WHERE timespan(Trip) > '5 days'		
 -------------------------------------------------------------------------------

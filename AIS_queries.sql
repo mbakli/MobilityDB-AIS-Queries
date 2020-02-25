@@ -20,7 +20,9 @@
 -- Query 3: What is the trajectory and speed of all ships that spent more than 5 days to reach to the Port of Kalundborg in September 2019?
 	SELECT mmsi AS ShipID, trajectory(Trip) AS Traj, speed(Trip) AS TripSpeed
 	FROM Ships
-	WHERE timespan(Trip) > '5 days'		
+	WHERE Destination='Kalundborg'
+	AND Trip && Period('2019-09-01', '2019-09-30')
+	AND timespan(Trip) > '5 days'
 -------------------------------------------------------------------------------
 -- Query 4:What is the length of all trips that ships did on September 2, 2019 to the ports of Puttgarden?
 	SELECT mmsi ShipID, length(Trip)
